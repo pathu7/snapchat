@@ -128,89 +128,79 @@ exports.delete_User = (req, res, next) => {
 }
 
 exports.Edit_user = async (req, res, next) => {
-    try{
+    try {
         const UserData = await User.find({ _id: { $nin: req.params.UserId } }).exec()
         // console.log(UserData);
 
-        for(Items of UserData){
-            // console.log(Items);
-                if (Items.email !== req.body.email) {
-                        if(req?.body?.password){
-                            // console.log('hiiiiiiii');
-                            const hashPassword = util.promisify(bcrypt.hash)
-                            const hash = await hashPassword(req.body.password, 10)
-                            req.body.password = hash
-                        }
-
-                    if (req?.body?.profile?.Images) {
-
-                        const base64Image = req.body.profile.Images
-                        const base64ext = req.body.profile.ext
-
-                        const binaryData = Buffer.from(base64Image, "base64")
-                        const fileName = `images${Date.now()}${base64ext}`
-                        const filepath = `./uploads/${fileName}`
-
-                        await fs.writeFile(filepath, binaryData);
-                        await fs.unlink(`./uploads/${req.body.oldProfile}`);
-
-                        req.body.profile = fileName
-                    }
-                    const updatedUser =  await User.findByIdAndUpdate(req.params.UserId, req.body)
-                    if (!updatedUser) {
-                        return res.status(404).json({ error: "User not Found" })
-                    }
-                    return res.status(200).json({ updatedUser })
-                } else {
-                    return res.status(404).json({ error: "Mail exists" })
+        UserData.map(async Items => {
+            if(Items.email != req.body.email){
+                if (req?.body?.password) {
+                    // console.log('hiiiiiiii');
+                    const hashPassword = util.promisify(bcrypt.hash)
+                    const hash = await hashPassword(req.body.password, 10)
+                    req.body.password = hash
                 }
-        }
 
-    } catch(err) {
+                if (req?.body?.profile?.Images) {
+
+                    const base64Image = req.body.profile.Images
+                    const base64ext = req.body.profile.ext
+
+                    const binaryData = Buffer.from(base64Image, "base64")
+                    const fileName = `images${Date.now()}${base64ext}`
+                    const filepath = `./uploads/${fileName}`
+
+                    await fs.writeFile(filepath, binaryData);
+                    await fs.unlink(`./uploads/${req.body.oldProfile}`);
+
+                    req.body.profile = fileName
+                }
+                const updatedUser = await User.findByIdAndUpdate(req.params.UserId, req.body)
+                if (!updatedUser) {
+                    return res.status(404).json({ error: "User not Found" })
+                }
+                return res.status(200).json({ updatedUser })
+            } else {
+                return res.status(404).json({ error: "Mail exists"}) 
+            }
+        })
+
+        // for (const Items of UserData) {
+        //     console.log('ALlll',Items);
+        //     if (Items.email != req.body.email) {
+        //         if (req?.body?.password) {
+        //             // console.log('hiiiiiiii');
+        //             const hashPassword = util.promisify(bcrypt.hash)
+        //             const hash = await hashPassword(req.body.password, 10)
+        //             req.body.password = hash
+        //         }
+
+        //         if (req?.body?.profile?.Images) {
+
+        //             const base64Image = req.body.profile.Images
+        //             const base64ext = req.body.profile.ext
+
+        //             const binaryData = Buffer.from(base64Image, "base64")
+        //             const fileName = `images${Date.now()}${base64ext}`
+        //             const filepath = `./uploads/${fileName}`
+
+        //             await fs.writeFile(filepath, binaryData);
+        //             await fs.unlink(`./uploads/${req.body.oldProfile}`);
+
+        //             req.body.profile = fileName
+        //         }
+        //         const updatedUser = await User.findByIdAndUpdate(req.params.UserId, req.body)
+        //         if (!updatedUser) {
+        //             return res.status(404).json({ error: "User not Found" })
+        //         }
+        //         return res.status(200).json({ updatedUser })
+        //     } else {
+        //         console.log('hiiiiiiiii');
+        //         return res.status(404).json("Mail exists")
+        //     }
+        // }
+
+    } catch (err) {
         return res.status(500).json({ error: err })
     }
 }
-
-// exports.Edit_user = async (req, res, next) => {
-//     try {
-//         const allResponse = await User.find({ _id: { $nin: req.params.UserId } }).exec();
-        
-//         for (const Items of allResponse) {
-//             if (Items.email !== req.body.email) {
-//                 if(req.body.password){
-//                     const hashPassword = util.promisify(bcrypt.hash);
-//                     const hash = await hashPassword(req.body.password, 10);
-//                     req.body.password = hash;
-//                 }
-                
-//                 console.log(req.body);
-//                 if (req?.body?.profile?.Images) {
-//                     const base64Image = req.body.profile.Images;
-//                     const base64ext = req.body.profile.ext;
-
-//                     const binaryData = Buffer.from(base64Image, 'base64');
-//                     const fileName = `images${Date.now()}${base64ext}`;
-//                     const filepath = `./uploads/${fileName}`;
-
-//                     await fs.writeFile(filepath, binaryData);
-
-//                     await fs.unlink(`./uploads/${req.body.oldProfile}`);
-
-//                     req.body.profile = fileName;
-//                 }
-
-//                 const updatedUser = await User.findByIdAndUpdate(req.params.UserId, req.body, { new: true });
-
-//                 if (!updatedUser) {
-//                     return res.status(404).json({ error: 'User not Found' });
-//                 }
-
-//                 return res.status(200).json({ response: updatedUser });
-//             } else {
-//                 return res.status(404).json({ error: 'Mail exists' });
-//             }
-//         }
-//     } catch (err) {
-//         return res.status(500).json({ error: err.message });
-//     }
-// };
