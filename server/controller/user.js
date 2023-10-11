@@ -1,7 +1,6 @@
-const mongoose = require('mongoose')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
-const fs = require('fs').promises;
+const fs = require('fs')
 const util = require('util')
 
 const User = require('../models/user')
@@ -62,13 +61,9 @@ exports.login_User = (req, res, next) => {
             if (user) {
                 // console.log(user);
                 bcrypt.compare(req.body.password, user.password, (err, result) => {
-                    console.log(err);
-                    if (err) {
-                        console.log(err);
-                        return res.status(401).json({ message: "Password was wrong" })
-                    }
+                    // console.log('1st',err);
                     if (result) {
-                        console.log(result);
+                        // console.log(result);
                         const token = jwt.sign({
                             email: user.email,
                             ID: user._id
@@ -82,7 +77,12 @@ exports.login_User = (req, res, next) => {
                             token: token,
                             message: "Auth Successful"
                         })
+                    } else {
+                        res.status(401).json({ message: "Password was wrong" })
                     }
+                    // if (err) {
+                    //     console.log('2nd',err);
+                    // }   
                 })
             } else {
                 return res.status(401).json({
@@ -128,20 +128,19 @@ exports.delete_User = (req, res, next) => {
 }
 
 exports.Edit_user = async (req, res, next) => {
-    try {
-        const UserData = await User.find({ _id: { $nin: req.params.UserId } }).exec()
-        // console.log(UserData);
+    User.find({ _id: { $nin: req.params.UserId } }).exec()
+        .then(async response => {
+            const UserList = response.some(Items => Items.email == req.body.email)
 
-        UserData.map(async Items => {
-            if(Items.email != req.body.email){
+            if (!UserList) {
                 if (req?.body?.password) {
-                    // console.log('hiiiiiiii');
                     const hashPassword = util.promisify(bcrypt.hash)
                     const hash = await hashPassword(req.body.password, 10)
                     req.body.password = hash
                 }
 
-                if (req?.body?.profile?.Images) {
+                if (req?.body?.profile?.ext) {
+                    // console.log('hiiiiii', req.body.profile.ext);
 
                     const base64Image = req.body.profile.Images
                     const base64ext = req.body.profile.ext
@@ -150,8 +149,10 @@ exports.Edit_user = async (req, res, next) => {
                     const fileName = `images${Date.now()}${base64ext}`
                     const filepath = `./uploads/${fileName}`
 
-                    await fs.writeFile(filepath, binaryData);
-                    await fs.unlink(`./uploads/${req.body.oldProfile}`);
+                    // console.log('hiiiiii upper', req.body.profile.ext);
+                    await fs.promises.writeFile(filepath, binaryData)
+                    await fs.promises.unlink(`./uploads/${req.body.oldProfile}`)
+                    // console.log('hiiiiii lower', req.body.profile.ext);
 
                     req.body.profile = fileName
                 }
@@ -161,46 +162,10 @@ exports.Edit_user = async (req, res, next) => {
                 }
                 return res.status(200).json({ updatedUser })
             } else {
-                return res.status(404).json({ error: "Mail exists"}) 
+                return res.status(404).json({ error: "Mail exists" })
             }
         })
-
-        // for (const Items of UserData) {
-        //     console.log('ALlll',Items);
-        //     if (Items.email != req.body.email) {
-        //         if (req?.body?.password) {
-        //             // console.log('hiiiiiiii');
-        //             const hashPassword = util.promisify(bcrypt.hash)
-        //             const hash = await hashPassword(req.body.password, 10)
-        //             req.body.password = hash
-        //         }
-
-        //         if (req?.body?.profile?.Images) {
-
-        //             const base64Image = req.body.profile.Images
-        //             const base64ext = req.body.profile.ext
-
-        //             const binaryData = Buffer.from(base64Image, "base64")
-        //             const fileName = `images${Date.now()}${base64ext}`
-        //             const filepath = `./uploads/${fileName}`
-
-        //             await fs.writeFile(filepath, binaryData);
-        //             await fs.unlink(`./uploads/${req.body.oldProfile}`);
-
-        //             req.body.profile = fileName
-        //         }
-        //         const updatedUser = await User.findByIdAndUpdate(req.params.UserId, req.body)
-        //         if (!updatedUser) {
-        //             return res.status(404).json({ error: "User not Found" })
-        //         }
-        //         return res.status(200).json({ updatedUser })
-        //     } else {
-        //         console.log('hiiiiiiiii');
-        //         return res.status(404).json("Mail exists")
-        //     }
-        // }
-
-    } catch (err) {
-        return res.status(500).json({ error: err })
-    }
+        .catch(err => {
+            return res.status(500).json({ error: err })
+        })
 }

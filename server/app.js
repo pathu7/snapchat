@@ -10,6 +10,7 @@ mongoose.connect('mongodb://0.0.0.0:27017/snapchat')
 .catch(() => {console.log('Not Connected');})
 
 const userRouters = require("./routes/user")
+const messageRouters = require("./routes/message")
 
 app.use(morgan('dev'))
 app.use('/uploads', express.static('uploads'))
@@ -30,6 +31,7 @@ app.use((req, res, next) => {
 })
 
 app.use(userRouters)
+app.use(messageRouters)
 
 app.use((req, res, next) =>{
     const error = new Error("Not Found");

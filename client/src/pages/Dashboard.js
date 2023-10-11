@@ -7,29 +7,39 @@ import avatar6 from '../assets/images/avatar6.jpg'
 
 function Dashboard() {
 
-  const { userId } = useContext(AuthContext)
-  const { email } = Auth()
+  const { userId, } = useContext(AuthContext)
+  const { email, token, } = Auth()
   const [users, setUsers] = useState([])
   const [personalDataID, setPersonalDataID] = useState(null)
   const [settings, setSettings] = useState(null)
   const [values, setValues] = useState({})
   const [images, setImages] = useState()
+  const [room, setRoom] = useState([])
 
 
   useEffect(() => {
     getUsers()
-    // console.log('gjhd',userId);
-  }, [])
+
+    if (!settings) {
+      UserActiveList()
+    }
+
+    // console.log('gjhd',useContext(AuthContext));
+  }, [settings])
+
+
+
 
   const getUsers = () => {
     const URL_PATH = CONSTANTS.API_URL + `allusers/${userId}`
-    // console.log(URL_PATH);
+    // console.log(token);
     return axios({
       url: URL_PATH,
       method: 'GET',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
+        'authorization': token
       }
     }).then((response) => {
       // console.log('response', response);
@@ -79,16 +89,14 @@ function Dashboard() {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
+        'authorization': token
       }
     }).then((response) => {
       if (response.data) {
         // response.data.profile = `http://192.168.0.103:9007/uploads/${response.data.profile}`
         setSettings(response.data)
-        console.log(response.data);
-
+        // console.log(response.data);
       }
-
-
     }).catch((error) => {
       console.log('error', error);
     })
@@ -125,10 +133,10 @@ function Dashboard() {
       email: values.email ? values.email : settings.email,
     }
 
-    if(values.password){
+    if (values.password) {
       body.password = values.password
     }
-    if(images){
+    if (images) {
       body.oldProfile = settings.profile
     }
     console.log(body);
@@ -139,26 +147,86 @@ function Dashboard() {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
         // 'Access-Control-Allow-Origin': '*',
+        'authorization': token
       },
       data: body
 
     }).then((response) => {
       // console.log(response);
       // console.log(response.data);
-      if(email !== body.email){
+      if (email !== body.email) {
         localStorage.removeItem("userId")
         localStorage.removeItem("Email")
         localStorage.removeItem("token")
         window.location.reload()
       }
-      
+
       window.location.href = '/'
     }, (error) => {
       console.log(error);
     });
   }
 
-  console.log(settings);
+  const UserActiveList = () => {
+    const URL_PATH = CONSTANTS.API_URL + `room/${userId}`
+    // console.log('hiiiii',URL_PATH);
+    return axios({
+      url: URL_PATH,
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'authorization': token
+      }
+    }).then((response) => {
+      if (response.data) {
+        // setRoom(response.data)
+        let RoomID = []
+        response.data.map(Items => {
+          Items.RoomId.map(RoomItems => {
+            if(userId != RoomItems){
+              RoomID.push(RoomItems)
+            }
+          })
+        })
+        setRoom(RoomID)
+        // console.log(response.data);
+      }
+    }).catch((error) => {
+      console.log('error', error);
+    })
+  }
+
+  const createChat = (ID) => {
+    console.log(ID);
+    const URL_PATH = CONSTANTS.API_URL + `room`
+    let body = {
+      senderId: userId,
+      receiverId: ID
+    }
+    console.log(body);
+    // return
+    return axios({
+      url: URL_PATH,
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        // 'Access-Control-Allow-Origin': '*',
+        'authorization': token
+      },
+      data: body
+
+    }).then((response) => {
+      // console.log(response);
+      // console.log(response.data);
+      window.location.href = '/'
+    }, (error) => {
+      console.log(error);
+    });
+  }
+
+  // console.log(settings);
 
   return (
     <div>
@@ -167,20 +235,27 @@ function Dashboard() {
           <div >
             <h3>{email} </h3>
           </div>
-          <button onClick={() => { Editdetails() }}>Edit</button>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <button style={{ padding: "15px 5px" }} onClick={() => { Editdetails() }}>Edit</button>
+          </div>
           <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-evenly' }}>
             <button type='button' style={{ fontSize: "0.8rem" }} onClick={() => { logOut() }}>logout</button>
             <button type='button' style={{ fontSize: "0.8rem" }} onClick={() => { DeactivateChat(userId) }}>Deactivate Chat</button>
-
           </div>
         </div>
         <div>
           {settings == null ?
             <div style={{ textAlign: 'center' }}>{
               users.map((user) => (
-                <div key={user._id} style={{ border: '1px solid black', display: 'flex' }} onClick={() => { personalData(user._id) }}>
-                  <img src={`http://192.168.0.114:9007/uploads/${user.profile}`} alt="img" style={{ height: "4rem", width: "4rem", borderRadius: '100%' }} />
-                  <h5><a>{user.firstName} {user.lastName}</a></h5>
+                <div key={user._id} style={{ border: '1px solid black', display: 'flex', justifyContent: "space-between" }} onClick={() => { personalData(user._id) }} >
+                  <div style={{ display: 'flex' }} >
+                    <img src={`http://192.168.0.114:9007/uploads/${user.profile}`} alt="img" style={{ margin: "auto 5px", height: "3rem", width: "3rem", borderRadius: '100%' }} />
+                    <h5><a> {user.firstName} {user.lastName}</a></h5>
+                  </div>
+                 
+                  <div style={{ margin: "auto 50px" }} >
+                    <button style={{ padding: "15px 5px" }} disabled={room.some(Items => (Items == user._id))} onClick={() => { createChat(user._id) }}>Start Chat</button>
+                  </div>
                 </div>
               ))}
             </div> :
@@ -208,7 +283,7 @@ function Dashboard() {
       </div>
 
 
-      <div style={{ marginLeft: "320px", border: "1px solid red", position: "relative" }}>
+      <div style={{ marginLeft: "320px", padding: '5px', position: "relative" }}>
         <Home ID={personalDataID} />
       </div>
     </div>

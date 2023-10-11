@@ -67,15 +67,15 @@ export default function Register() {
         <>
             <form onSubmit={submit}>
                 <label>Profile: </label>
-                <input type="file" onChange={(e) => {handleImageChange(e)}} required /><br />
+                <input type="file" onChange={(e) => {handleImageChange(e)}} /><br />
                 <label>First Name: </label>
-                <input type='text' minLength={3} onChange={(e) => { setFname(e.target.value) }} required /><br />
+                <input type='text' minLength={3} onChange={(e) => { setFname(e.target.value) }}  /><br />
                 <label>Last Name: </label>
-                <input type='text' minLength={3} onChange={(e) => { setLname(e.target.value) }} required /><br />
+                <input type='text' minLength={3} onChange={(e) => { setLname(e.target.value) }}  /><br />
                 <label>Email: </label>
-                <input type='email' onChange={(e) => { setEmail(e.target.value) }} required /><br />
+                <input type='email' onChange={(e) => { setEmail(e.target.value) }}  /><br />
                 <label>Password: </label>
-                <input type='password' onChange={(e) => { setPassword(e.target.value) }} required /><br />
+                <input type='password' onChange={(e) => { setPassword(e.target.value) }}  /><br />
                 <button type='submit'>Submit</button>
             </form>
             <br />
