@@ -17,17 +17,18 @@ function Home({ ID }) {
 
   const [message, setMessage] = useState('')
   const [roomName, setRoomName] = useState('')
-  const [massageList, setMessageList] = useState([])
+  const [messageList, setMessageList] = useState([]);
+  const [receivemsg, setReceiveMsg] = useState(null)
 
   useEffect(() => {
     // console.log(ID);
     socket = io(CONNECTION_PORT)
 
     if (ID) {
-      console.log('fhjhgjghj',roomName);
+      // console.log('fhjhgjghj',roomName);
       DisplayChat()
       connectedRoom()
-      if(roomName){
+      if (roomName) {
         oldMessageAPI()
       }
     }
@@ -59,9 +60,9 @@ function Home({ ID }) {
   }
 
   const oldMessageAPI = () => {
-    console.log(roomName);
+    // console.log(roomName);
     const URL_PATH = CONSTANTS.API_URL + `message/${roomName}`
-    console.log(URL_PATH);
+    // console.log(URL_PATH);
     return axios({
       url: URL_PATH,
       method: 'GET',
@@ -72,7 +73,7 @@ function Home({ ID }) {
       }
     }).then((response) => {
       if (response.data) {
-        console.log(response.data);
+        // console.log(response.data);
         setOldMessage(response.data)
       }
     }).catch((error) => {
@@ -107,14 +108,23 @@ function Home({ ID }) {
 
   }
 
+  // useEffect(() => {
+  //   socket.on("receive_message", (data) => {
+  //     setReceiveMsg(data)
+  //   })
+  // })
+
+
+
   useEffect(() => {
     socket.on("receive_message", (data) => {
-      setMessageList([...massageList, data])
+      setMessageList((prevItems) => [...prevItems, data])
     })
-  })
+    console.log(messageList);
+  }, [socket])
 
   const sendMessage = async () => {
-    console.log('text:-', message + "  sender:-", UserId + "   receiver", ID);
+    // console.log('text:-', message + "  sender:-", UserId + "   receiver", ID);
 
     let messageContent = {
       room: roomName,
@@ -124,11 +134,13 @@ function Home({ ID }) {
       }
     }
 
+    console.log("before state", messageList);
+
     await socket.emit("send_message", messageContent)
-    setMessageList([ ...massageList, messageContent.content])
-    
+    setMessageList((prevItems) => [...prevItems, messageContent.content])
+    setMessage('')
 
-
+    return
     const URL_PATH = CONSTANTS.API_URL + 'createmessage'
     let body = {
       roomID: roomName,
@@ -150,14 +162,20 @@ function Home({ ID }) {
       data: body
 
     }).then((response) => {
-      console.log(response.data);
       setMessage('')
+      console.log(response.data);
 
     }, (error) => {
       console.log(error);
     });
-    
+
   }
+
+  // useEffect(() => {
+
+  //   console.log(messageList);
+  // }, [messageList])
+  // console.log(messageList);
 
 
 
@@ -184,9 +202,10 @@ function Home({ ID }) {
                   {/* <h1 style={{display:oldmes.author == userName && "none"}}>{oldmes.author}</h1> */}
                 </div>
               ))}
-              {massageList.map(val => {
-                return(
-                  <div className='messageContainer' key={val} id={val.author == UserId ? "You" : "Other"}>
+              {/* {console.log("return+++", messageList)} */}
+              {messageList.map(val => {
+                return (
+                  <div className='messageContainer' id={val.author == UserId ? "You" : "Other"}>
                     <div className='messageIndividual'>{val.message}</div>
 
                   </div>

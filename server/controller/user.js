@@ -68,7 +68,7 @@ exports.login_User = (req, res, next) => {
                             email: user.email,
                             ID: user._id
                         }, "parth", {
-                            expiresIn: "1h"
+                            expiresIn: "9h"
                         })
 
                         return res.status(200).json({
